@@ -1,0 +1,106 @@
+[
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "_baseToken",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_targetToken",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_interval",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint8",
+				"name": "_startNow",
+				"type": "uint8"
+			},
+			{
+				"internalType": "address payable",
+				"name": "_recipient",
+				"type": "address"
+			},
+			{
+				"internalType": "address payable",
+				"name": "_funder",
+				"type": "address"
+			},
+			{
+				"internalType": "uint24",
+				"name": "_poolFee",
+				"type": "uint24"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_maxEpoch",
+				"type": "uint256"
+			}
+		],
+		"name": "createDCA",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "DCABotRecipient",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "DCABots",
+		"outputs": [
+			{
+				"internalType": "contract DCA",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "totalDCALength",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]
