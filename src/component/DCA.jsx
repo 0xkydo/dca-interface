@@ -11,21 +11,16 @@ function DCA() {
     const factoryContractAddress = '0x6CD3D421220A961462c306DEC213B6b1e208Ebfe';
 
     const [errorMessage, setErrorMessage] = useState(null);
-    const [defaultAccount, setDefaultAccount] = useState('Not Connected');
-    const [DCABotAddress, setDCABotAddress] = useState("Create One First");
+    const [DCABotAddress, setDCABotAddress] = useState("**Create One First**");
     const [connButtonText, setConnButtonText] = useState("Connect with Metamask");
 
-    const [provider, setProvider] = useState(null);
     const [signer, setSigner] = useState(null);
     const [contractFactory, setcontractFactory] = useState(null);
-    const [contractApprove, setcontractApprove] = useState(null);
-    const [contractDCASwap, setcontractDCASwap] = useState(null);
 
     async function connectWallet() {
         if (window.ethereum) {
             let requestedAccounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
             setConnButtonText(requestedAccounts[0]);
-            setDefaultAccount(requestedAccounts[0]);
 
         } else {
             setErrorMessage("Need to install metamask");
@@ -35,14 +30,13 @@ function DCA() {
     // Update ethers instance with metamask provider, signer, and initialize factory contract.
     async function updateEthers() {
         let tempProvider = new ethers.providers.Web3Provider(window.ethereum);
-        setProvider(tempProvider);
 
         let tempSigner = tempProvider.getSigner();
         setSigner(tempSigner);
+        
+        let tempContract = new ethers.Contract(factoryContractAddress, DCAFactory_abi, tempSigner);
 
-        let tempContract = new ethers.Contract(factoryContractAddress, DCAFactory_abi, signer);
         setcontractFactory(tempContract);
-
     }
 
     // Connect to Metamask extension.
@@ -64,7 +58,8 @@ function DCA() {
     */
     async function creatDCAHandler(event) {
         event.preventDefault();
-        connectWalletHandler();
+        console.log(contractFactory);
+        await connectWalletHandler();
 
 
         // Hard Coded testing
@@ -79,7 +74,7 @@ function DCA() {
         // let maxEpoch = 3;
 
         // Convert input variables to correct format.
-        let amount = event.target.amount.value * event.target.decimal.value;
+        let amount = ethers.BigNumber.from(event.target.amount.value).mul(ethers.BigNumber.from(10).pow(event.target.decimal.value));
         let baseToken = event.target.baseToken.value;
         let targetToken = event.target.targetToken.value;
         let interval = event.target.interval.value * 60 * 60 * 24; // convert from days to seconds.
@@ -88,6 +83,8 @@ function DCA() {
         let funder = event.target.funder.value;
         let poolFee = event.target.poolFee.value;
         let maxEpoch = event.target.maxEpoch.value;
+
+        console.log(amount);
 
         let tx = await contractFactory.createDCA(
             amount,
@@ -101,7 +98,7 @@ function DCA() {
             maxEpoch
         );
 
-        setDCABotAddress("Creating...");
+        setDCABotAddress("**Creating...**");
 
         let tx_receipt = await tx.wait();
 
@@ -113,30 +110,29 @@ function DCA() {
 
     async function approveHandler(event) {
         event.preventDefault();
-        connectWalletHandler();
-
+        await connectWalletHandler();
 
         let tempBot = new ethers.Contract(event.target.botAddress.value, DCA_abi, signer);
-        setcontractDCASwap(tempBot);
 
-        let baseToken = await contractDCASwap.baseTokenAddress();
+        let baseToken = await tempBot.baseTokenAddress();
+
+        console.log(baseToken);
 
         let tempERC = new ethers.Contract(baseToken, ERC20_abi, signer);
-        setcontractApprove(tempERC);
 
-        await contractApprove.approve(event.target.botAddress.value, contractApprove.totalSupply());
+
+        await tempERC.approve(event.target.botAddress.value, await tempERC.totalSupply());
 
     }
 
     // Execute a swap through the inputted bot.
     async function swapHandler(event) {
         event.preventDefault();
-        connectWalletHandler();
+        await connectWalletHandler();
 
         let tempContract = new ethers.Contract(event.target.address.value, DCA_abi, signer);
-        setcontractDCASwap(tempContract);
 
-        let tx = await contractDCASwap.swap(event.target.amount.value);
+        let tx = await tempContract.swap(event.target.amount.value);
 
 
     }
@@ -177,14 +173,14 @@ function DCA() {
                 </p>
             </div>
             <div className='mb-3'>
-                <button type="button" className="text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 text-[13px] rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 mr-2 mb-2" onClick={connectWalletHandler}>
+                <button type="button" className={`${styles.btn}`} onClick={connectWalletHandler}>
                     {connButtonText}
                 </button>
             </div>
 
             {/* Create DCA Bot */}
             <div>
-                <h3 className='text-[26px] py-2  text-slate-50	font-semibold'> 2. Create your DCA Bot</h3>
+                <h3 className='text-[26px] py-4  text-slate-50	font-semibold'> 2. Create your DCA Bot</h3>
             </div>
             <div className='w-[500px] '>
                 <form className='items-center' onSubmit={creatDCAHandler}>
@@ -192,131 +188,133 @@ function DCA() {
                     <div className="grid md:grid-cols-2 md:gap-6">
                         {/*Recipient*/}
                         <div className="relative z-0 mb-6 w-full group">
-                            <input type="text" name="r_address" id="floating_email" className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
-                            <label htmlFor="r_address" className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Recipient Address</label>
+                            <input type="text" name="r_address" id="recipient" className={`${styles.inputBox}`} placeholder=" " required />
+                            <label htmlFor="r_address" className={`${styles.inputLabel}`}>Recipient Address</label>
                         </div>
                         {/*Funder*/}
 
                         <div className="relative z-0 mb-6 w-full group">
-                            <input type="text" name="f_address" id="funder" className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+                            <input type="text" name="f_address" id="funder" className={`${styles.inputBox}`} placeholder=" " required />
 
-                            <label htmlFor="f_address" className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Funding address</label>
+                            <label htmlFor="f_address" className={`${styles.inputLabel}`}>Funding address</label>
                         </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 md:gap-6">
                         {/*baseToken*/}
                         <div className="relative z-0 mb-6 w-full group">
-                            <input type="text" name="r_address" id="floating_email" className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
-                            <label htmlFor="r_address" className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Base Token</label>
+                            <input type="text" name="baseToken" id="baseToken" className={`${styles.inputBox}`} placeholder=" " required />
+                            <label htmlFor="baseToken" className={`${styles.inputLabel}`}>Base Token</label>
                         </div>
                         {/*decimal*/}
 
                         <div className="relative z-0 mb-6 w-full group">
-                            <input type="text" name="f_address" id="funder" className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+                            <input type="text" name="decimals" id="decimal" className={`${styles.inputBox}`} placeholder=" " required />
 
-                            <label htmlFor="f_address" className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Decimal For Base Token</label>
+                            <label htmlFor="decimals" className={`${styles.inputLabel}`}>Decimal For Base Token</label>
                         </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 md:gap-6">
                         {/*targetToken*/}
                         <div className="relative z-0 mb-6 w-full group">
-                            <input type="text" name="t_token" id="targetToken" className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
-                            <label htmlFor="t_token" className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Target token address</label>
+                            <input type="text" name="t_token" id="targetToken" className={`${styles.inputBox}`} placeholder=" " required />
+                            <label htmlFor="t_token" className={`${styles.inputLabel}`}>Target token address</label>
                         </div>
                         {/*interval*/}
 
                         <div className="relative z-0 mb-6 w-full group">
-                            <input type="text" name="intervals" id="interval" className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+                            <input type="text" name="intervals" id="interval" className={`${styles.inputBox}`} placeholder=" " required />
 
-                            <label htmlFor="intervals" className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Buy every __ day</label>
+                            <label htmlFor="intervals" className={`${styles.inputLabel}`}>Buy every __ day</label>
                         </div>
                     </div>
 
                     <div className="grid md:grid-cols-2 md:gap-6">
                         {/*amount*/}
                         <div className="relative z-0 mb-6 w-full group">
-                            <input type="text" name="amount" id="amount" className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
-                            <label htmlFor="amount" className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Amount to spend each time</label>
+                            <input type="text" name="amount" id="amount" className={`${styles.inputBox}`} placeholder=" " required />
+                            <label htmlFor="amount" className={`${styles.inputLabel}`}>Amount to spend each time</label>
                         </div>
                         {/*startNow*/}
 
                         <div className="relative z-0 mb-6 w-full group">
-                            <input type="text" name="startNow" id="startNow" className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+                            <input type="text" name="startNow" id="startNow" className={`${styles.inputBox}`} placeholder=" " required />
 
-                            <label htmlFor="startNow" className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">I want to buy now (1:yes,0:no)</label>
+                            <label htmlFor="startNow" className={`${styles.inputLabel}`}>I want to buy now (1:yes,0:no)</label>
                         </div>
                     </div>
 
 
                     {/*poolFee*/}
                     <div className="relative z-0 mb-6 w-full group">
-                        <input type="number" name="poolFee" id="poolFee" className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
-                        <label htmlFor="r_address" className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Which pool to use? (3000, 500, 100 for 0.3%, 0.05%, 0.01% respectively)</label>
+                        <input type="number" name="poolFee" id="poolFee" className={`${styles.inputBox}`} placeholder=" " required />
+                        <label htmlFor="r_address" className={`${styles.inputLabel}`}>Which pool to use? (3000, 500, 100 for 0.3%, 0.05%, 0.01% respectively)</label>
                     </div>
                     {/*maxEpoch*/}
 
                     <div className="relative z-0 mb-6 w-full group">
-                        <input type="text" name="maxEpoch" id="maxEpoch" className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+                        <input type="text" name="maxEpoch" id="maxEpoch" className={`${styles.inputBox}`} placeholder=" " required />
 
-                        <label htmlFor="maxEpoch" className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">How many times do you want to buy?</label>
+                        <label htmlFor="maxEpoch" className={`${styles.inputLabel}`}>How many times do you want to buy?</label>
                     </div>
                     <div className="justify-between items-center ">
-                        <button className='text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 mr-2 mb-2 ' type={'submit'}> Create DCA Bot</button>
+                        <button className={`${styles.btn}`} type={'submit'}> Create DCA Bot</button>
                     </div>
 
 
                 </form>
-                <h3 className='text-[18px] py-2  text-slate-50'>DCA Bot Address: {DCABotAddress}</h3>
+                <h3 className='text-[18px] py-4  text-slate-50'>DCA Bot Address: {DCABotAddress}</h3>
             </div>
 
             {/* Approve Bot to Swap */}
-            <div className='mx-100'>
-                <h3 className='text-[26px] py-2  text-slate-50	font-semibold'>
+            <div>
+                <h3 className='text-[26px] py-6  text-slate-50	font-semibold'>
                     3. Approve Bot to Swap on your behalf.
                 </h3>
 
                 <form onSubmit={approveHandler}>
                     <div className="relative z-0 mb-6 w-full group">
-                        <input type="text" name="botaddress" id="botaddress" className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
-                        <label htmlFor="botaddress" className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Bot address</label>
+                        <input type="text" name="botaddress" id="botAddress" className={`${styles.inputBox}`} placeholder=" " required />
+                        <label htmlFor="botaddress" className={`${styles.inputLabel}`}>Bot address</label>
                     </div>
-                    <button className='text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 mr-2 mb-2 ' type={'submit'}>Approve</button>
+                    <button className={`${styles.btn}`} type={'submit'}>Approve</button>
                 </form>
 
             </div>
 
             {/* Execute a Swap */}
-            <div className='mx-30'>
-                <h3 className='text-[26px] py-2  text-slate-50	font-semibold'>
+            <div>
+                <h3 className='w-full text-[26px] py-4  text-slate-50	font-semibold'>
                     4. Execute a swap
                 </h3>
 
                 <form onSubmit={swapHandler}>
                     <div className="relative z-0 mb-6 w-full group">
-                        <input type="text" name="address" id="address" className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
-                        <label htmlFor="address" className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Bot address</label>
+                        <input type="text" name="address" id="address" className={`${styles.inputBox}`} placeholder=" " required />
+                        <label htmlFor="address" className={`${styles.inputLabel}`}>Bot address</label>
                     </div>
                     <div className="relative z-0 mb-6 w-full group">
-                        <input type="text" name="amount" id="amount" className="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
-                        <label htmlFor="amount" className="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Minimal output amount</label>
+                        <input type="text" name="amount" id="amount" className={`${styles.inputBox}`} placeholder=" " required />
+                        <label htmlFor="amount" className={`${styles.inputLabel}`}>Minimal output amount</label>
                     </div>
-                    <button className='text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700 mr-2 mb-2 ' type={'submit'}>Execute Swap</button>
+                    <button className={`${styles.btn}`} type={'submit'}>Execute Swap</button>
                 </form>
 
             </div>
 
+            <div className='py-16'>
+                <p>
+                    Built by <a href="https://twitter.com/0xkydo" target="_blank" rel="noreferrer" className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600">
+                        Kydo
+                    </a> .  Repos can be found here: <a href="https://github.com/0xkydo/onchain-dca" target="_blank" rel="noreferrer" className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600">
+                        Smart Contract
+                    </a> and <a href="https://github.com/0xkydo/dca-interface" target="_blank" rel="noreferrer" className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600">
+                        Front End
+                    </a>
+                </p>
+            </div>
 
-
-
-
-
-
-
-
-
-            {errorMessage}
         </div>
     );
 
