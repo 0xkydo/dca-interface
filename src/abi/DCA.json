@@ -56,43 +56,6 @@
 			{
 				"indexed": true,
 				"internalType": "address",
-				"name": "recipient",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "interval",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "baseTokenAddress",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "targetTokenAddress",
-				"type": "address"
-			}
-		],
-		"name": "DCACreated",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
 				"name": "baseTokenAddress",
 				"type": "address"
 			},
@@ -300,8 +263,14 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "unstuckBase",
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "erc20",
+				"type": "address"
+			}
+		],
+		"name": "unstuckERC",
 		"outputs": [],
 		"stateMutability": "payable",
 		"type": "function"
@@ -309,13 +278,6 @@
 	{
 		"inputs": [],
 		"name": "unstuckETH",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "unstuckTarget",
 		"outputs": [],
 		"stateMutability": "payable",
 		"type": "function"

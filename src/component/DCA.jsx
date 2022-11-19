@@ -8,7 +8,7 @@ import styles from '../style'
 
 function DCA() {
     // Declare factory contract address
-    const factoryContractAddress = '0x6CD3D421220A961462c306DEC213B6b1e208Ebfe';
+    const factoryContractAddress = '0x04A5e1bD0737a2D3B2Fe3bBC77370152B3eB2464';
 
     const [errorMessage, setErrorMessage] = useState(null);
     const [DCABotAddress, setDCABotAddress] = useState("**Create One First**");
@@ -43,6 +43,8 @@ function DCA() {
     async function connectWalletHandler() {
         await connectWallet();
         await updateEthers();
+
+        console.log("Wallet Connected.")
     }
 
     /* Create a new DCA Bot.
@@ -58,7 +60,6 @@ function DCA() {
     */
     async function creatDCAHandler(event) {
         event.preventDefault();
-        console.log(contractFactory);
         await connectWalletHandler();
 
 
@@ -84,8 +85,6 @@ function DCA() {
         let poolFee = event.target.poolFee.value;
         let maxEpoch = event.target.maxEpoch.value;
 
-        console.log(amount);
-
         let tx = await contractFactory.createDCA(
             amount,
             baseToken,
@@ -96,15 +95,18 @@ function DCA() {
             funder,
             poolFee,
             maxEpoch
-        );
+        ); 
+
+        console.log("Creating DCA Bot...");
 
         setDCABotAddress("**Creating...**");
 
         let tx_receipt = await tx.wait();
 
-        console.log(tx_receipt.logs[1].address)
+        setDCABotAddress(ethers.utils.hexStripZeros(tx_receipt.logs[1].topics[3]));
 
-        setDCABotAddress(tx_receipt.logs[1].address);
+        console.log("Transaction hash: " + tx_receipt.logs[1].transactionHash);
+        console.log("DCA Bot address: " + ethers.utils.hexStripZeros(tx_receipt.logs[1].topics[3]) );
 
     }
 
@@ -116,10 +118,9 @@ function DCA() {
 
         let baseToken = await tempBot.baseTokenAddress();
 
-        console.log(baseToken);
+        console.log("Base token address: " + baseToken);
 
         let tempERC = new ethers.Contract(baseToken, ERC20_abi, signer);
-
 
         await tempERC.approve(event.target.botAddress.value, await tempERC.totalSupply());
 
@@ -134,6 +135,7 @@ function DCA() {
 
         let tx = await tempContract.swap(event.target.amount.value);
 
+        console.log("Swap transaction hash: " + tx.transactionHash);
 
     }
 
@@ -308,10 +310,10 @@ function DCA() {
                     Built by <a href="https://twitter.com/0xkydo" target="_blank" rel="noreferrer" className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600">
                         Kydo
                     </a> .  Repos can be found here: <a href="https://github.com/0xkydo/onchain-dca" target="_blank" rel="noreferrer" className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600">
-                        Smart Contract
+                        smart contract
                     </a> and <a href="https://github.com/0xkydo/dca-interface" target="_blank" rel="noreferrer" className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600">
-                        Front End
-                    </a>
+                        front end
+                    </a>.
                 </p>
             </div>
 
