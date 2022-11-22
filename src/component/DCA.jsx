@@ -16,6 +16,8 @@ function DCA() {
 
     const [signer, setSigner] = useState(null);
     const [contractFactory, setcontractFactory] = useState(null);
+    const [showVarDescription, setShowVarDescription] = useState(false);
+    const [varDescriptionText, setVarDescriptionText] = useState("Show variable descriptions");
 
     async function connectWallet() {
         if (window.ethereum) {
@@ -33,7 +35,7 @@ function DCA() {
 
         let tempSigner = tempProvider.getSigner();
         setSigner(tempSigner);
-        
+
         let tempContract = new ethers.Contract(factoryContractAddress, DCAFactory_abi, tempSigner);
 
         setcontractFactory(tempContract);
@@ -95,7 +97,7 @@ function DCA() {
             funder,
             poolFee,
             maxEpoch
-        ); 
+        );
 
         console.log("Creating DCA Bot...");
 
@@ -106,7 +108,7 @@ function DCA() {
         setDCABotAddress(ethers.utils.hexStripZeros(tx_receipt.logs[1].topics[3]));
 
         console.log("Transaction hash: " + tx_receipt.logs[1].transactionHash);
-        console.log("DCA Bot address: " + ethers.utils.hexStripZeros(tx_receipt.logs[1].topics[3]) );
+        console.log("DCA Bot address: " + ethers.utils.hexStripZeros(tx_receipt.logs[1].topics[3]));
 
     }
 
@@ -137,6 +139,15 @@ function DCA() {
 
         console.log("Swap transaction hash: " + tx.transactionHash);
 
+    }
+
+    function showDescriptionHandler(){
+        setShowVarDescription(!showVarDescription);
+        if(!showVarDescription){
+            setVarDescriptionText("Hide variable descriptions");
+        }else{
+            setVarDescriptionText("Show variable descriptions");
+        }
     }
 
     // Render HTML
@@ -184,6 +195,29 @@ function DCA() {
             <div>
                 <h3 className='text-[26px] py-4  text-slate-50	font-semibold'> 2. Create your DCA Bot</h3>
             </div>
+            <div>
+                <button className={`${styles.btn}`} onClick={showDescriptionHandler}>
+                {varDescriptionText}
+                </button>
+                </div>
+                <div>
+                {
+                    showVarDescription && (<p className='font-thin text-[16px]'>
+                    <ul>
+                        <li>Recipient address: address receiving from the swap</li>
+                        <li>Funding address: address supplying the swap</li>
+                        <li>Base token address: the token you are swapping from</li>
+                        <li>Decimals of base token: number of decimals</li>
+                        <li>Target token address: the token you are swapping to</li>
+                        <li>Buy every __ day: interval of swaps</li>
+                        <li>Amount to spend each time: if you want to spend 300 usdc each time, input 300</li>
+                        <li>I want to buy now: Do you want to wait for the next interval to start or start now?</li>
+                        <li>Which pool to use? Specify which Uniswap pool you want to transaction through ()</li>
+                        <li>How many times do you want to buy? The bot cannot swap more than this times</li>
+                    </ul>
+                </p>)
+                }
+            </div>
             <div className='w-[500px] '>
                 <form className='items-center' onSubmit={creatDCAHandler}>
 
@@ -206,14 +240,14 @@ function DCA() {
                         {/*baseToken*/}
                         <div className="relative z-0 mb-6 w-full group">
                             <input type="text" name="baseToken" id="baseToken" className={`${styles.inputBox}`} placeholder=" " required />
-                            <label htmlFor="baseToken" className={`${styles.inputLabel}`}>Base Token</label>
+                            <label htmlFor="baseToken" className={`${styles.inputLabel}`}>Base token address</label>
                         </div>
                         {/*decimal*/}
 
                         <div className="relative z-0 mb-6 w-full group">
                             <input type="text" name="decimals" id="decimal" className={`${styles.inputBox}`} placeholder=" " required />
 
-                            <label htmlFor="decimals" className={`${styles.inputLabel}`}>Decimal For Base Token</label>
+                            <label htmlFor="decimals" className={`${styles.inputLabel}`}>Decimals of base token</label>
                         </div>
                     </div>
 
