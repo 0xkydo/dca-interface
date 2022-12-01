@@ -11,18 +11,20 @@ function DCA() {
     const factoryContractAddress = '0x04A5e1bD0737a2D3B2Fe3bBC77370152B3eB2464';
 
     const [errorMessage, setErrorMessage] = useState(null);
-    const [DCABotAddress, setDCABotAddress] = useState("**Create One First**");
+    const [connectedAccount, setConnectedAccount] = useState(null);
+    const [DCABotAddress, setDCABotAddress] = useState("Not yet created");
     const [connButtonText, setConnButtonText] = useState("Connect with Metamask");
 
     const [signer, setSigner] = useState(null);
     const [contractFactory, setcontractFactory] = useState(null);
     const [showVarDescription, setShowVarDescription] = useState(false);
-    const [varDescriptionText, setVarDescriptionText] = useState("Show variable descriptions");
+    const [varDescriptionText, setVarDescriptionText] = useState("Show field descriptions");
 
     async function connectWallet() {
         if (window.ethereum) {
             let requestedAccounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-            setConnButtonText(requestedAccounts[0]);
+            setConnectedAccount(requestedAccounts[0]);
+            setConnButtonText(`Connected: ${requestedAccounts[0]}`);
 
         } else {
             setErrorMessage("Need to install metamask");
@@ -64,26 +66,21 @@ function DCA() {
         event.preventDefault();
         await connectWalletHandler();
 
-
-        // Hard Coded testing
-        // let amount = '30000000000000000000000';
-        // let baseToken = '0xfBE283ba7053B3Cbf90522259aA143EB39f5D5AE';
-        // let targetToken = '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6';
-        // let interval = 0; // convert from days to seconds.
-        // let startNow = 1;
-        // let recipient = '0xcEDB35d2163E721B6B9944Dd358C883bbE3C0F2a';
-        // let funder = '0xcEDB35d2163E721B6B9944Dd358C883bbE3C0F2a';
-        // let poolFee = 500;
-        // let maxEpoch = 3;
-
-        // Convert input variables to correct format.
-        let amount = ethers.BigNumber.from(event.target.amount.value).mul(ethers.BigNumber.from(10).pow(event.target.decimal.value));
         let baseToken = event.target.baseToken.value;
+
+        // Get decimals point and convert to actual amount
+        let baseERC = new ethers.Contract(baseToken, ERC20_abi, signer);
+        let decimalsBase = await baseERC.decimals();
+
+        console.log(`Base token decimal points: ${decimalsBase}.`)
+        
+        // Convert input variables to correct format.
+        let amount = ethers.BigNumber.from(event.target.amount.value).mul(ethers.BigNumber.from(10).pow(decimalsBase));
         let targetToken = event.target.targetToken.value;
         let interval = event.target.interval.value * 60 * 60 * 24; // convert from days to seconds.
-        let startNow = event.target.startNow.value;
-        let recipient = event.target.recipient.value;
-        let funder = event.target.funder.value;
+        let startNow = 1;
+        let recipient = connectedAccount;
+        let funder = connectedAccount;
         let poolFee = event.target.poolFee.value;
         let maxEpoch = event.target.maxEpoch.value;
 
@@ -101,7 +98,7 @@ function DCA() {
 
         console.log("Creating DCA Bot...");
 
-        setDCABotAddress("**Creating...**");
+        setDCABotAddress("Creating . . .");
 
         let tx_receipt = await tx.wait();
 
@@ -141,12 +138,12 @@ function DCA() {
 
     }
 
-    function showDescriptionHandler(){
+    function showDescriptionHandler() {
         setShowVarDescription(!showVarDescription);
-        if(!showVarDescription){
-            setVarDescriptionText("Hide variable descriptions");
-        }else{
-            setVarDescriptionText("Show variable descriptions");
+        if (!showVarDescription) {
+            setVarDescriptionText("Hide field descriptions");
+        } else {
+            setVarDescriptionText("Show field descriptions");
         }
     }
 
@@ -154,6 +151,7 @@ function DCA() {
     return (
 
         <div className='w-full flex flex-col items-center py-6 justify-between text-slate-300 font-poppins font-normal'>
+
             {/* Connect Wallet */}
             <div>
                 <h2 className='text-[42px]'>
@@ -197,44 +195,25 @@ function DCA() {
             </div>
             <div>
                 <button className={`${styles.btn}`} onClick={showDescriptionHandler}>
-                {varDescriptionText}
+                    {varDescriptionText}
                 </button>
-                </div>
-                <div>
+            </div>
+            <div>
                 {
-                    showVarDescription && (<p className='font-thin text-[16px]'>
-                    <ul>
-                        <li>Recipient address: address receiving from the swap</li>
-                        <li>Funding address: address supplying the swap</li>
-                        <li>Base token address: the token you are swapping from</li>
-                        <li>Decimals of base token: number of decimals</li>
-                        <li>Target token address: the token you are swapping to</li>
-                        <li>Buy every __ day: interval of swaps</li>
-                        <li>Amount to spend each time: if you want to spend 300 usdc each time, input 300</li>
-                        <li>I want to buy now: Do you want to wait for the next interval to start or start now?</li>
-                        <li>Which pool to use? Specify which Uniswap pool you want to transaction through ()</li>
-                        <li>How many times do you want to buy? The bot cannot swap more than this times</li>
-                    </ul>
-                </p>)
+                    showVarDescription && (
+                        <ul className='w-[600px] font-thin text-[16px] my-1'>
+                            <li><span className="font-bold">Base token address:</span>  the token you are swapping from</li>
+                            <li><span className="font-bold">Target token address:</span> the token you are swapping to</li>
+                            <li><span className="font-bold">Buy every __ day:</span> interval of swaps</li>
+                            <li><span className="font-bold">Amount to spend each time:</span> if you want to spend 300 usdc each time, input 300.</li>
+                            <li><span className="font-bold">Which pool to use?</span> Specify which Uniswap pool you want to transaction through. For the 0.3% pool, input 3000; For the 0.05% pool, input 500, etc.</li>
+                            <li><span className="font-bold">How many times do you want to buy?</span> The bot cannot swap more than this amount of times</li>
+                        </ul>
+                    )
                 }
             </div>
-            <div className='w-[500px] '>
+            <div className='w-[500px] my-3'>
                 <form className='items-center' onSubmit={creatDCAHandler}>
-
-                    <div className="grid md:grid-cols-2 md:gap-6">
-                        {/*Recipient*/}
-                        <div className="relative z-0 mb-6 w-full group">
-                            <input type="text" name="r_address" id="recipient" className={`${styles.inputBox}`} placeholder=" " required />
-                            <label htmlFor="r_address" className={`${styles.inputLabel}`}>Recipient Address</label>
-                        </div>
-                        {/*Funder*/}
-
-                        <div className="relative z-0 mb-6 w-full group">
-                            <input type="text" name="f_address" id="funder" className={`${styles.inputBox}`} placeholder=" " required />
-
-                            <label htmlFor="f_address" className={`${styles.inputLabel}`}>Funding address</label>
-                        </div>
-                    </div>
 
                     <div className="grid md:grid-cols-2 md:gap-6">
                         {/*baseToken*/}
@@ -242,21 +221,15 @@ function DCA() {
                             <input type="text" name="baseToken" id="baseToken" className={`${styles.inputBox}`} placeholder=" " required />
                             <label htmlFor="baseToken" className={`${styles.inputLabel}`}>Base token address</label>
                         </div>
-                        {/*decimal*/}
-
-                        <div className="relative z-0 mb-6 w-full group">
-                            <input type="text" name="decimals" id="decimal" className={`${styles.inputBox}`} placeholder=" " required />
-
-                            <label htmlFor="decimals" className={`${styles.inputLabel}`}>Decimals of base token</label>
-                        </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 md:gap-6">
                         {/*targetToken*/}
                         <div className="relative z-0 mb-6 w-full group">
                             <input type="text" name="t_token" id="targetToken" className={`${styles.inputBox}`} placeholder=" " required />
                             <label htmlFor="t_token" className={`${styles.inputLabel}`}>Target token address</label>
                         </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 md:gap-6">
+                        
                         {/*interval*/}
 
                         <div className="relative z-0 mb-6 w-full group">
@@ -264,23 +237,13 @@ function DCA() {
 
                             <label htmlFor="intervals" className={`${styles.inputLabel}`}>Buy every __ day</label>
                         </div>
-                    </div>
 
-                    <div className="grid md:grid-cols-2 md:gap-6">
                         {/*amount*/}
                         <div className="relative z-0 mb-6 w-full group">
                             <input type="text" name="amount" id="amount" className={`${styles.inputBox}`} placeholder=" " required />
                             <label htmlFor="amount" className={`${styles.inputLabel}`}>Amount to spend each time</label>
                         </div>
-                        {/*startNow*/}
-
-                        <div className="relative z-0 mb-6 w-full group">
-                            <input type="text" name="startNow" id="startNow" className={`${styles.inputBox}`} placeholder=" " required />
-
-                            <label htmlFor="startNow" className={`${styles.inputLabel}`}>I want to buy now (1:yes,0:no)</label>
-                        </div>
                     </div>
-
 
                     {/*poolFee*/}
                     <div className="relative z-0 mb-6 w-full group">
@@ -320,8 +283,8 @@ function DCA() {
             </div>
 
             {/* Execute a Swap */}
-            <div>
-                <h3 className='w-full text-[26px] py-4  text-slate-50	font-semibold'>
+            <div className='w-[500px]'>
+                <h3 className='w-full text-[26px] py-4  text-slate-50 font-semibold'>
                     4. Execute a swap
                 </h3>
 
@@ -333,6 +296,7 @@ function DCA() {
                     <div className="relative z-0 mb-6 w-full group">
                         <input type="text" name="amount" id="amount" className={`${styles.inputBox}`} placeholder=" " required />
                         <label htmlFor="amount" className={`${styles.inputLabel}`}>Minimal output amount</label>
+                        <div className="mt-1 text-sm text-gray-500">*Adjusting for slippage. Input 0 for simplicity.</div>
                     </div>
                     <button className={`${styles.btn}`} type={'submit'}>Execute Swap</button>
                 </form>
@@ -340,14 +304,18 @@ function DCA() {
             </div>
 
             <div className='py-16'>
-                <p>
+                <p className="text-center">
                     Built by <a href="https://twitter.com/0xkydo" target="_blank" rel="noreferrer" className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600">
                         Kydo
-                    </a> .  Repos can be found here: <a href="https://github.com/0xkydo/onchain-dca" target="_blank" rel="noreferrer" className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600">
+                    </a>
+
+                    <br />
+
+                    Repos: <a href="https://github.com/0xkydo/onchain-dca" target="_blank" rel="noreferrer" className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600">
                         smart contract
                     </a> and <a href="https://github.com/0xkydo/dca-interface" target="_blank" rel="noreferrer" className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600">
                         front end
-                    </a>.
+                    </a>
                 </p>
             </div>
 
