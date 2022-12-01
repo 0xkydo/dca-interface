@@ -201,7 +201,7 @@ function DCA() {
             <div>
                 {
                     showVarDescription && (
-                        <ul className='w-[600px] font-thin text-[16px] my-1'>
+                        <ul className='w-[600px] font-thin text-[16px] my-1 text-center'>
                             <li><span className="font-bold">Base token address:</span>  the token you are swapping from</li>
                             <li><span className="font-bold">Target token address:</span> the token you are swapping to</li>
                             <li><span className="font-bold">Buy every __ day:</span> interval of swaps</li>
