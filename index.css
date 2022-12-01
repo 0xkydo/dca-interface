@@ -540,6 +540,16 @@ video {
   margin-bottom: 1.5rem;
 }
 
+.my-1{
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.my-3{
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
 .mr-2{
   margin-right: 0.5rem;
 }
@@ -554,6 +564,10 @@ video {
 
 .mb-6{
   margin-bottom: 1.5rem;
+}
+
+.mt-1{
+  margin-top: 0.25rem;
 }
 
 .block{
@@ -757,6 +771,10 @@ video {
 
 .font-thin{
   font-weight: 100;
+}
+
+.font-bold{
+  font-weight: 700;
 }
 
 .text-gray-200{
