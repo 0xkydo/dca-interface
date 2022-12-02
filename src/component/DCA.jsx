@@ -22,6 +22,13 @@ function DCA() {
 
     async function connectWallet() {
         if (window.ethereum) {
+            // Change network to Goerli
+            await ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0x5' }],
+            });
+
+            // Connect account.
             let requestedAccounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
             setConnectedAccount(requestedAccounts[0]);
             setConnButtonText(`Connected: ${requestedAccounts[0]}`);
@@ -29,6 +36,7 @@ function DCA() {
         } else {
             setErrorMessage("Need to install metamask");
         }
+        
     }
 
     // Update ethers instance with metamask provider, signer, and initialize factory contract.
@@ -38,8 +46,8 @@ function DCA() {
         let tempSigner = tempProvider.getSigner();
         setSigner(tempSigner);
 
+        // Create and store factory contract
         let tempContract = new ethers.Contract(factoryContractAddress, DCAFactory_abi, tempSigner);
-
         setcontractFactory(tempContract);
     }
 
@@ -73,7 +81,7 @@ function DCA() {
         let decimalsBase = await baseERC.decimals();
 
         console.log(`Base token decimal points: ${decimalsBase}.`)
-        
+
         // Convert input variables to correct format.
         let amount = ethers.BigNumber.from(event.target.amount.value).mul(ethers.BigNumber.from(10).pow(decimalsBase));
         let targetToken = event.target.targetToken.value;
@@ -104,9 +112,6 @@ function DCA() {
 
         setDCABotAddress(ethers.utils.hexStripZeros(tx_receipt.logs[1].topics[3]));
 
-        console.log("Transaction hash: " + tx_receipt.logs[1].transactionHash);
-        console.log("DCA Bot address: " + ethers.utils.hexStripZeros(tx_receipt.logs[1].topics[3]));
-
     }
 
     async function approveHandler(event) {
@@ -133,8 +138,6 @@ function DCA() {
         let tempContract = new ethers.Contract(event.target.address.value, DCA_abi, signer);
 
         let tx = await tempContract.swap(event.target.amount.value);
-
-        console.log("Swap transaction hash: " + tx.transactionHash);
 
     }
 
@@ -179,7 +182,7 @@ function DCA() {
 
             {/* Connect Wallet */}
             <div>
-                <p className='text-[26px] py-5  text-slate-50	font-semibold'>
+                <p className='text-[26px] py-5 text-slate-50	font-semibold'>
                     1. Connect Wallet
                 </p>
             </div>
@@ -229,7 +232,7 @@ function DCA() {
                     </div>
 
                     <div className="grid md:grid-cols-2 md:gap-6">
-                        
+
                         {/*interval*/}
 
                         <div className="relative z-0 mb-6 w-full group">
